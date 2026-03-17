@@ -103,7 +103,7 @@ Alternatively, if you have Python installed, you can use:
   "mcpServers": {
     "Muzaic": {
       "command": "python",
-      "args": ["-m", "pip", "run", "muzaic-mcp"],
+      "args": ["-m", "muzaic_mcp.server"],
       "env": {
         "MUZAIC_API_KEY": "<your-api-key>"
       }

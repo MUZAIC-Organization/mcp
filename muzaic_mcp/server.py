@@ -102,14 +102,24 @@ _lifespan_state: Dict[str, Any] = {}
 
 
 def _get_client(ctx) -> httpx.AsyncClient:
+    """Get the HTTP client from lifespan state. Raises clear error if not initialized."""
     if ctx is not None and hasattr(ctx, "request_context"):
         return ctx.request_context.lifespan_state["http_client"]
+    
+    if "http_client" not in _lifespan_state:
+        raise RuntimeError(
+            "Muzaic MCP server not properly initialized. "
+            "The HTTP client is missing from lifespan state. "
+            "This usually means the server startup failed or the lifespan context wasn't entered. "
+            "Check that MUZAIC_API_KEY is set and the server started correctly."
+        )
     return _lifespan_state["http_client"]
 
 
 def _get_tags_cache(ctx) -> Dict[str, Any]:
+    """Get the tags cache from lifespan state. Returns empty dict if not available."""
     if ctx is not None and hasattr(ctx, "request_context"):
-        return ctx.request_context.lifespan_state["tags_cache"]
+        return ctx.request_context.lifespan_state.get("tags_cache", {})
     return _lifespan_state.get("tags_cache", {})
 
 
