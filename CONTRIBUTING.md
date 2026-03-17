@@ -12,9 +12,20 @@ uv sync
 
 ## Running Locally
 
+**macOS/Linux:**
 ```bash
 export MUZAIC_API_KEY=your_key
 uv run mcp dev muzaic_mcp/server.py
+# Or with pip:
+python -m muzaic_mcp.server
+```
+
+**Windows:**
+```powershell
+$env:MUZAIC_API_KEY="your_key"
+uv run mcp dev muzaic_mcp/server.py
+# Or with pip:
+python -m muzaic_mcp.server
 ```
 
 ## Testing

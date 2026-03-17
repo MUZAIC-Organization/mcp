@@ -5,7 +5,7 @@ Model Context Protocol server for the Muzaic AI music generation API.
 Exposes music generation tools to any MCP-compatible client
 (Claude Desktop, Cursor, Windsurf, VS Code, OpenAI Agents, etc.)
 
-API:  http://m10.muzaic.ai/
+API:  https://m10.muzaic.ai/
 Docs: https://docs.muzaic.ai/
 """
 
@@ -26,7 +26,7 @@ from pydantic import BaseModel, ConfigDict, Field
 # Configuration
 # ---------------------------------------------------------------------------
 
-BASE_URL = os.getenv("MUZAIC_API_URL", "http://m10.muzaic.ai")
+BASE_URL = os.getenv("MUZAIC_API_URL", "https://m10.muzaic.ai")
 API_KEY = os.getenv("MUZAIC_API_KEY", "")
 HTTP_TIMEOUT = int(os.getenv("MUZAIC_HTTP_TIMEOUT", "300"))
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
@@ -45,7 +45,7 @@ MIN_DURATION = 1
 # ---------------------------------------------------------------------------
 
 @asynccontextmanager
-async def app_lifespan():
+async def app_lifespan(app):
     """Manage the httpx client and pre-fetch tags on startup."""
     if not API_KEY:
         logger.warning("MUZAIC_API_KEY is not set — tools will fail at runtime.")
@@ -66,9 +66,14 @@ async def app_lifespan():
             tags_cache = resp.json()
             logger.info("Tags pre-fetched: %d tags loaded", len(tags_cache.get("tags", [])))
         except Exception as exc:
-            logger.error("Failed to pre-fetch tags: %s", exc)
+            logger.warning("Failed to pre-fetch tags (server will still work): %s", exc)
 
-        yield {"http_client": client, "tags_cache": tags_cache}
+        state = {"http_client": client, "tags_cache": tags_cache}
+        _lifespan_state.update(state)
+        try:
+            yield state
+        finally:
+            _lifespan_state.clear()
 
 
 # ---------------------------------------------------------------------------
@@ -90,15 +95,22 @@ mcp = FastMCP(
 
 
 # ---------------------------------------------------------------------------
-# Helpers
+# Helpers — lifespan state fallback when ctx is not passed (e.g. by some MCP clients)
 # ---------------------------------------------------------------------------
 
+_lifespan_state: Dict[str, Any] = {}
+
+
 def _get_client(ctx) -> httpx.AsyncClient:
-    return ctx.request_context.lifespan_state["http_client"]
+    if ctx is not None and hasattr(ctx, "request_context"):
+        return ctx.request_context.lifespan_state["http_client"]
+    return _lifespan_state["http_client"]
 
 
 def _get_tags_cache(ctx) -> Dict[str, Any]:
-    return ctx.request_context.lifespan_state["tags_cache"]
+    if ctx is not None and hasattr(ctx, "request_context"):
+        return ctx.request_context.lifespan_state["tags_cache"]
+    return _lifespan_state.get("tags_cache", {})
 
 
 def _handle_api_error(e: Exception) -> str:
@@ -145,14 +157,28 @@ def _validate_params(params: Dict[str, Any]) -> Optional[str]:
 
 def _format_generation_result(data: Dict[str, Any]) -> Dict[str, Any]:
     """Standardize the generation response."""
-    return {
+    # Check multiple possible field names for audio URL (API v2.0 uses "mp3" or "wav")
+    # Prioritize wav over mp3 for higher quality, then fallback to legacy field names
+    audio_url = data.get("wav") or data.get("mp3") or data.get("url") or data.get("audioUrl") or ""
+    # Check for hash (soundtrackHash for soundtracks, hash for single files)
+    hash_value = data.get("soundtrackHash") or data.get("hash") or ""
+    # Check for duration (audioDuration for soundtracks, duration for single files)P
+    duration = data.get("audioDuration") or data.get("duration") or 0
+    # Tokens used (tokensUsed in API v2.0, or fallback to duration)
+    tokens_used = data.get("tokensUsed") or duration
+    
+    result = {
         "status": "success",
-        "audio_url": data.get("url", data.get("audioUrl", "")),
-        "hash": data.get("hash", ""),
-        "duration_seconds": data.get("duration", 0),
-        "tokens_used": data.get("duration", 0),
+        "audio_url": audio_url,
+        "hash": hash_value,
+        "duration_seconds": duration,
+        "tokens_used": tokens_used,
         "message": "Music generated successfully. Use the audio_url to download/embed.",
     }
+    # Include raw API response for debugging if URL is missing
+    if not audio_url:
+        result["_debug_raw_api_response"] = data
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -312,7 +338,9 @@ async def muzaic_generate_music(params: GenerateMusicInput, ctx=None) -> str:
             "params": music_params,
         })
         resp.raise_for_status()
-        return json.dumps(_format_generation_result(resp.json()), indent=2)
+        response_data = resp.json()
+        logger.debug("API response data: %s", json.dumps(response_data, indent=2))
+        return json.dumps(_format_generation_result(response_data), indent=2)
     except Exception as e:
         return _handle_api_error(e)
 
@@ -364,7 +392,9 @@ async def muzaic_create_soundtrack(params: CreateSoundtrackInput, ctx=None) -> s
             "regions": regions_payload,
         })
         resp.raise_for_status()
-        return json.dumps(_format_generation_result(resp.json()), indent=2)
+        response_data = resp.json()
+        logger.debug("API response data: %s", json.dumps(response_data, indent=2))
+        return json.dumps(_format_generation_result(response_data), indent=2)
     except Exception as e:
         return _handle_api_error(e)
 
