@@ -324,4 +324,4 @@ MIT — see [LICENSE](LICENSE) for details.
 - **Website**: [muzaic.ai](https://muzaic.ai)
 - **API Docs**: [docs.muzaic.ai](https://docs.muzaic.ai)
 - **Get API Key**: [adminpanel.muzaic.ai](https://adminpanel.muzaic.ai)
-- **Support**: [support@muzaic.ai](mailto:support@muzaic.ai)
+- **Support**: [service@muzaic.ai](mailto:service@muzaic.ai)
