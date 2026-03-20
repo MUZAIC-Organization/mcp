@@ -10,7 +10,7 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 authors = [
-    { name = "Muzaic", email = "support@muzaic.ai" },
+    { name = "Muzaic", email = "service@muzaic.ai" },
 ]
 keywords = [
     "mcp",
@@ -51,9 +51,9 @@ muzaic-mcp = "muzaic_mcp.server:main"
 [project.urls]
 Homepage = "https://muzaic.ai"
 Documentation = "https://docs.muzaic.ai"
-Repository = "https://github.com/muzaic-ai/muzaic-mcp"
-Issues = "https://github.com/muzaic-ai/muzaic-mcp/issues"
-Changelog = "https://github.com/muzaic-ai/muzaic-mcp/blob/main/CHANGELOG.md"
+Repository = "https://github.com/MUZAIC-Organization/muzaic-mcp"
+Issues = "https://github.com/MUZAIC-Organization/muzaic-mcp/issues"
+Changelog = "https://github.com/MUZAIC-Organization/muzaic-mcp/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["muzaic_mcp"]
