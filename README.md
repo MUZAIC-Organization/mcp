@@ -71,7 +71,9 @@ Go to **Claude → Settings → Developer → Edit Config** and add:
 
 ### Cursor
 
-Add to **~/.cursor/mcp.json**:
+**Windows:** Add to `%USERPROFILE%\.cursor\mcp.json` (e.g., `C:\Users\YourName\.cursor\mcp.json`)
+
+**macOS/Linux:** Add to `~/.cursor/mcp.json`
 
 ```json
 {
@@ -79,6 +81,29 @@ Add to **~/.cursor/mcp.json**:
     "Muzaic": {
       "command": "uvx",
       "args": ["muzaic-mcp"],
+      "env": {
+        "MUZAIC_API_KEY": "<your-api-key>"
+      }
+    }
+  }
+}
+```
+
+**Note:** If `uvx` is not in your PATH, use the full path. On Windows with Python installed, you can find it with:
+```powershell
+where.exe uvx
+# Or if using uv:
+where.exe uv
+# Then use: "C:\\path\\to\\uv.exe" with args: ["tool", "run", "muzaic-mcp"]
+```
+
+Alternatively, if you have Python installed, you can use:
+```json
+{
+  "mcpServers": {
+    "Muzaic": {
+      "command": "python",
+      "args": ["-m", "muzaic_mcp.server"],
       "env": {
         "MUZAIC_API_KEY": "<your-api-key>"
       }
@@ -176,13 +201,46 @@ Make sure the `MUZAIC_API_KEY` environment variable is configured in your MCP cl
 
 ### `uvx` not found
 
-If you get `spawn uvx ENOENT`, find the absolute path:
+**Windows:**
+```powershell
+# Find uvx location
+where.exe uvx
 
-```bash
-which uvx
+# If not found, install uv first:
+# pip install uv
+# Or download from: https://github.com/astral-sh/uv/releases
+
+# Then use full path in mcp.json:
+# "command": "C:\\Users\\YourName\\AppData\\Local\\Programs\\uv\\uv.exe"
+# "args": ["tool", "run", "muzaic-mcp"]
 ```
 
-Then use the full path in your config (e.g. `"command": "/usr/local/bin/uvx"`).
+**macOS/Linux:**
+```bash
+# Find uvx location
+which uvx
+
+# If not found, install uv:
+# curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Then use full path in config:
+# "command": "/usr/local/bin/uvx"
+```
+
+**Alternative:** Use Python directly if `uvx` is unavailable:
+```json
+{
+  "mcpServers": {
+    "Muzaic": {
+      "command": "python",
+      "args": ["-m", "muzaic_mcp.server"],
+      "env": {
+        "MUZAIC_API_KEY": "<your-api-key>"
+      }
+    }
+  }
+}
+```
 
 ### Timeout on long tracks
 
@@ -199,13 +257,47 @@ cd muzaic-mcp
 
 # Install with dev dependencies
 uv sync
+# Or with pip:
+# pip install -e ".[dev]"
 
 # Run in dev mode
+# Windows PowerShell:
+$env:MUZAIC_API_KEY="your_key"
+# macOS/Linux:
 export MUZAIC_API_KEY=your_key
+
 uv run mcp dev muzaic_mcp/server.py
+# Or with pip:
+# python -m muzaic_mcp.server
 
 # Run tests
 uv run pytest
+# Or with pip:
+# pytest
+```
+
+### Local Development Setup
+
+If you're developing locally and want to test without publishing to PyPI:
+
+**Windows:**
+```powershell
+# Install in editable mode
+pip install -e .
+
+# Test the command
+$env:MUZAIC_API_KEY="your_key"
+muzaic-mcp
+```
+
+**macOS/Linux:**
+```bash
+# Install in editable mode
+pip install -e .
+
+# Test the command
+export MUZAIC_API_KEY=your_key
+muzaic-mcp
 ```
 
 ### Testing with MCP Inspector
@@ -214,7 +306,10 @@ uv run pytest
 npx @modelcontextprotocol/inspector
 # → Transport: stdio
 # → Command: uv run muzaic-mcp
+# Or: python -m muzaic_mcp.server
 ```
+
+**Windows Note:** If you encounter issues with `npx`, ensure Node.js is installed and in your PATH. You can also use the full path to `npx` if needed.
 
 ---
 
