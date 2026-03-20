@@ -5,7 +5,7 @@ Thank you for your interest in contributing! Here's how to get started.
 ## Development Setup
 
 ```bash
-git clone https://github.com/muzaic-ai/muzaic-mcp.git
+git clone https://github.com/MUZAIC-Organization/muzaic-mcp.git
 cd muzaic-mcp
 uv sync
 ```
@@ -49,7 +49,7 @@ uv run pytest
 
 ## Reporting Issues
 
-Open an issue at [github.com/muzaic-ai/muzaic-mcp/issues](https://github.com/muzaic-ai/muzaic-mcp/issues) with:
+Open an issue at [github.com/MUZAIC-Organization/muzaic-mcp/issues](https://github.com/MUZAIC-Organization/muzaic-mcp/issues) with:
 - Steps to reproduce
 - Expected vs actual behavior
 - Python version and MCP client used
